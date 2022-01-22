@@ -1,1 +1,1 @@
-# BLE-gather
+# BLE-gather (BLE Advirtisement gather)
