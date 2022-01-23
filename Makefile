@@ -1,3 +1,3 @@
 
 build:
-	env GOOS=linux GOARCH=arm GOARM=7 go build -o blegather-raspi4
+	env GOOS=linux GOARCH=arm64 go build -o blegather-raspi4
