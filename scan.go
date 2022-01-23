@@ -51,7 +51,7 @@ func (s *Scanner) advFilter(a ble.Advertisement) bool {
 
 func (s *Scanner) StartScan() {
 	finish = false
-	for !finish {
+	for finish {
 		ctx := ble.WithSigHandler(context.WithTimeout(context.Background(), *s.Timeout))
 		ble.Scan(ctx, false, s.advHandler, s.advFilter)
 	}
