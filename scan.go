@@ -25,7 +25,7 @@ func NewScanner(timeout time.Duration) Scanner {
 }
 
 var finish bool = false
-var devices map[string]Device
+var devices map[string]Device = make(map[string]Device)
 
 type Device struct {
 	MACAddress  string    `json:"address"`
