@@ -57,6 +57,7 @@ func (s *Scanner) advFilter(a ble.Advertisement) bool {
 }
 
 func (s *Scanner) StartScan() {
+	log.Println("start scan")
 	finish = false
 	for !finish {
 		ctx := ble.WithSigHandler(context.WithTimeout(context.Background(), *s.Timeout))
@@ -65,5 +66,6 @@ func (s *Scanner) StartScan() {
 }
 
 func (s *Scanner) StopScan() {
+	log.Println("stop scan")
 	finish = true
 }

@@ -15,9 +15,9 @@ func main() {
 	}
 	defer f.Close()
 
-	writer := io.MultiWriter(f, os.Stdout)
+	mulwriter := io.MultiWriter(os.Stdout, f)
 	log.SetFlags(log.Ldate | log.Ldate)
-	log.SetOutput(writer)
+	log.SetOutput(mulwriter)
 
 	s := NewScanner(5 * time.Second)
 	go s.StartScan()
