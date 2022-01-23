@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"log"
 	"time"
 
@@ -11,27 +12,32 @@ import (
 
 type Scanner struct {
 	Timeout *time.Duration
-	logger  *log.Logger
 	device  *linux.Device
 }
 
-func NewScanner(timeout time.Duration, logger *log.Logger) Scanner {
+func NewScanner(timeout time.Duration) Scanner {
 	d, err := linux.NewDevice()
 	if err != nil {
-		logger.Fatal("Can't create new device: ", err)
+		log.Fatal("Can't create new device: ", err)
 	}
 	ble.SetDefaultDevice(d)
-	return Scanner{Timeout: &timeout, logger: logger, device: d}
+	return Scanner{Timeout: &timeout, device: d}
 }
 
 var finish bool = false
+var devices map[string]Device
 
 type Device struct {
-	MACAddress  string
-	Name        string
-	Timestamp   time.Time
-	RSSI        int
-	ResponseRaw []byte
+	MACAddress  string    `json:"address"`
+	Name        string    `json:"name"`
+	Timestamp   time.Time `json:"timestamp"`
+	RSSI        int       `json:"rssi"`
+	ResponseRaw []byte    `json:"response"`
+}
+
+func (d Device) JSON() (s string, err error) {
+	j, err := json.Marshal(d)
+	return string(j), err
 }
 
 func (s *Scanner) advHandler(a ble.Advertisement) {
@@ -42,7 +48,8 @@ func (s *Scanner) advHandler(a ble.Advertisement) {
 		RSSI:        a.RSSI(),
 		ResponseRaw: a.ScanResponseRaw(),
 	}
-	s.logger.Println(d)
+	devices[d.MACAddress] = d
+	log.Println(d.JSON())
 }
 
 func (s *Scanner) advFilter(a ble.Advertisement) bool {
@@ -51,7 +58,7 @@ func (s *Scanner) advFilter(a ble.Advertisement) bool {
 
 func (s *Scanner) StartScan() {
 	finish = false
-	for finish {
+	for !finish {
 		ctx := ble.WithSigHandler(context.WithTimeout(context.Background(), *s.Timeout))
 		ble.Scan(ctx, false, s.advHandler, s.advFilter)
 	}

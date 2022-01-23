@@ -1,6 +1,7 @@
 package main
 
 import (
+	"io"
 	"log"
 	"os"
 	"os/signal"
@@ -14,9 +15,11 @@ func main() {
 	}
 	defer f.Close()
 
-	logger := log.New(f, "", log.LstdFlags)
+	writer := io.MultiWriter(f, os.Stdout)
+	log.SetFlags(log.Ldate | log.Ldate)
+	log.SetOutput(writer)
 
-	s := NewScanner(5*time.Second, logger)
+	s := NewScanner(5 * time.Second)
 	go s.StartScan()
 
 	quit := make(chan os.Signal)
