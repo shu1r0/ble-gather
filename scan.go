@@ -30,11 +30,12 @@ func NewScanner(timeout time.Duration) Scanner {
 }
 
 type Device struct {
-	MACAddress  string    `json:"address"`
-	Name        string    `json:"name"`
-	Timestamp   time.Time `json:"timestamp"`
-	RSSI        int       `json:"rssi"`
-	ResponseRaw []byte    `json:"response"`
+	MACAddress    string    `json:"address"`
+	Name          string    `json:"name"`
+	Timestamp     time.Time `json:"timestamp"`
+	RSSI          int       `json:"rssi"`
+	Advertisement []byte    `json:"advertisement"`
+	ResponseRaw   []byte    `json:"response"`
 }
 
 func (d Device) JSON() (s string) {
@@ -45,11 +46,12 @@ func (d Device) JSON() (s string) {
 func (s *Scanner) advHandler(a ble.Advertisement) {
 	s.mutex.Lock()
 	d := Device{
-		MACAddress:  a.Addr().String(),
-		Name:        a.LocalName(),
-		Timestamp:   time.Now(),
-		RSSI:        a.RSSI(),
-		ResponseRaw: a.ScanResponseRaw(),
+		MACAddress:    a.Addr().String(),
+		Name:          a.LocalName(),
+		Timestamp:     time.Now(),
+		RSSI:          a.RSSI(),
+		Advertisement: a.LEAdvertisingReportRaw(),
+		ResponseRaw:   a.ScanResponseRaw(),
 	}
 	s.devices[d.MACAddress] = d
 	s.mutex.Unlock()
