@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"log"
+	"sync"
 	"time"
 
 	"github.com/sausheong/ble"
@@ -12,7 +13,11 @@ import (
 
 type Scanner struct {
 	Timeout *time.Duration
+
 	device  *linux.Device
+	finish  bool
+	mutex   sync.RWMutex
+	devices map[string]Device
 }
 
 func NewScanner(timeout time.Duration) Scanner {
@@ -21,11 +26,8 @@ func NewScanner(timeout time.Duration) Scanner {
 		log.Fatal("Can't create new device: ", err)
 	}
 	ble.SetDefaultDevice(d)
-	return Scanner{Timeout: &timeout, device: d}
+	return Scanner{Timeout: &timeout, device: d, finish: false, mutex: sync.RWMutex{}, devices: make(map[string]Device)}
 }
-
-var finish bool = false
-var devices map[string]Device = make(map[string]Device)
 
 type Device struct {
 	MACAddress  string    `json:"address"`
@@ -35,12 +37,13 @@ type Device struct {
 	ResponseRaw []byte    `json:"response"`
 }
 
-func (d Device) JSON() (s string, err error) {
-	j, err := json.Marshal(d)
-	return string(j), err
+func (d Device) JSON() (s string) {
+	j, _ := json.Marshal(d)
+	return string(j)
 }
 
 func (s *Scanner) advHandler(a ble.Advertisement) {
+	s.mutex.Lock()
 	d := Device{
 		MACAddress:  a.Addr().String(),
 		Name:        a.LocalName(),
@@ -48,7 +51,8 @@ func (s *Scanner) advHandler(a ble.Advertisement) {
 		RSSI:        a.RSSI(),
 		ResponseRaw: a.ScanResponseRaw(),
 	}
-	devices[d.MACAddress] = d
+	s.devices[d.MACAddress] = d
+	s.mutex.Unlock()
 	log.Println(d.JSON())
 }
 
@@ -58,8 +62,8 @@ func (s *Scanner) advFilter(a ble.Advertisement) bool {
 
 func (s *Scanner) StartScan() {
 	log.Println("start scan")
-	finish = false
-	for !finish {
+	s.finish = false
+	for !s.finish {
 		ctx := ble.WithSigHandler(context.WithTimeout(context.Background(), *s.Timeout))
 		ble.Scan(ctx, false, s.advHandler, s.advFilter)
 	}
@@ -67,5 +71,5 @@ func (s *Scanner) StartScan() {
 
 func (s *Scanner) StopScan() {
 	log.Println("stop scan")
-	finish = true
+	s.finish = true
 }
