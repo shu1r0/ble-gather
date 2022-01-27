@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/hex"
 	"encoding/json"
 	"log"
 	"sync"
@@ -34,7 +35,7 @@ type Device struct {
 	Name          string    `json:"name"`
 	Timestamp     time.Time `json:"timestamp"`
 	RSSI          int       `json:"rssi"`
-	Advertisement []byte    `json:"advertisement"`
+	Advertisement string    `json:"advertisement"`
 	ResponseRaw   []byte    `json:"response"`
 }
 
@@ -50,7 +51,7 @@ func (s *Scanner) advHandler(a ble.Advertisement) {
 		Name:          a.LocalName(),
 		Timestamp:     time.Now(),
 		RSSI:          a.RSSI(),
-		Advertisement: a.LEAdvertisingReportRaw(),
+		Advertisement: hex.EncodeToString(a.LEAdvertisingReportRaw()),
 		ResponseRaw:   a.ScanResponseRaw(),
 	}
 	s.devices[d.MACAddress] = d
